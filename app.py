@@ -6,6 +6,7 @@ import pymongo
 from bson import ObjectId
 from dotenv import load_dotenv
 import os
+from io import BytesIO
 
 from src.pipeline.pdf_processing_pipeline import PDFProcessingPipeline
 from src.pipeline.query_pipeline import QueryPipeline
@@ -33,10 +34,7 @@ class PDFResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str
-    use_reranking: bool = False
-    top_k: Optional[int] = None
-    top_k_retrieve: Optional[int] = None
-    top_k_rerank: Optional[int] = None
+    
 
 class QueryResponse(BaseModel):
     answer: str
@@ -67,18 +65,16 @@ async def process_pdfs(files: List[UploadFile] = File(...)):
     
     # Process PDFs
     try:
-        # Prepare files for processing
-        file_list = []
+        results = []
+        
         for file in files:
+            # Read file content
             content = await file.read()
-            file_list.append({
-                "content": content,
-                "filename": file.filename
-            })
-        
-        # Process PDFs using the pipeline
-        results = pdf_pipeline.process_multiple_pdfs(file_list)
-        
+            
+            # Process the PDF directly without saving to temp directory
+            result = pdf_pipeline.process_pdf_stream(content, file.filename)
+            results.append(result)
+            
         return results
     
     except Exception as e:
@@ -98,19 +94,7 @@ async def process_query(request: QueryRequest):
     logger.info(f"Received query request: {request.query}")
     
     try:
-        if request.use_reranking:
-            # Use reranking if requested
-            result = query_pipeline.answer_query_with_reranking(
-                query=request.query,
-                top_k_retrieve=request.top_k_retrieve or 10,
-                top_k_rerank=request.top_k_rerank or 5
-            )
-        else:
-            # Standard query processing
-            result = query_pipeline.answer_query(
-                query=request.query
-            )
-        
+        result = query_pipeline.answer_query(request.query)
         return result
     
     except Exception as e:

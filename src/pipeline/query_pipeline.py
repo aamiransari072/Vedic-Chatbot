@@ -1,15 +1,14 @@
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from dotenv import load_dotenv
 from langchain_core.documents import Document
-from langchain.chains import StuffDocumentsChain, LLMChain
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 
 from src.components.data_retriever import DataRetriever
 from src.Agent.google import Gemini
 from src.logging import logger
 from src.utils.environment import get_env_variable
+
 
 load_dotenv()
 
@@ -39,7 +38,7 @@ class QueryPipeline:
     3. Send query and context to LLM for answering
     """
     
-    def __init__(self, top_k: int = 5, prompt_template: Optional[str] = None):
+    def __init__(self, top_k: int = 5, prompt_template: str = None):
         """
         Initialize the query pipeline with retriever and LLM
         
@@ -82,15 +81,10 @@ class QueryPipeline:
         if not docs:
             return "No relevant documents found."
         
-        # Format each document with its metadata and content
+        # Format each document with its content
         formatted_docs = []
         for i, doc in enumerate(docs):
-            # Extract relevant metadata (if available)
-            source = doc.metadata.get("s3_key", "Unknown source")
-            doc_id = doc.metadata.get("document_id", f"doc_{i}")
-            
-            # Format the document
-            formatted_doc = f"[Document {i+1}]\nSource: {source}\nID: {doc_id}\n\nContent:\n{doc.page_content}\n"
+            formatted_doc = f"[Document {i+1}]\n\nContent:\n{doc.page_content}\n"
             formatted_docs.append(formatted_doc)
         
         # Join all formatted documents
@@ -110,7 +104,7 @@ class QueryPipeline:
         
         try:
             # Retrieve relevant documents
-            docs = self.retriever.retrieve_documents(query)
+            docs = self.retriever.retrieve_documents(query=query)
             if not docs:
                 logger.warning("No documents retrieved for query")
                 return {
@@ -136,7 +130,6 @@ class QueryPipeline:
             for doc in docs:
                 source_info = {
                     "document_id": doc.metadata.get("document_id", "Unknown"),
-                    "s3_key": doc.metadata.get("s3_key", "Unknown"),
                     "filename": doc.metadata.get("filename", "Unknown")
                 }
                 sources.append(source_info)
@@ -155,7 +148,8 @@ class QueryPipeline:
                 "success": False
             }
     
-    def answer_query_with_reranking(self, query: str, top_k_retrieve: int = 10, top_k_rerank: int = 5) -> Dict[str, Any]:
+    def answer_query_with_reranking(self, query: str, top_k_retrieve: int = 10, 
+                                    top_k_rerank: int = 5) -> Dict[str, Any]:
         """
         Answer a user query with reranking of retrieved documents
         
@@ -172,7 +166,7 @@ class QueryPipeline:
         try:
             # Retrieve and rerank documents
             docs = self.retriever.retrieve_and_rerank(
-                query, 
+                query=query, 
                 top_k_retrieve=top_k_retrieve, 
                 top_k_rerank=top_k_rerank
             )
@@ -202,7 +196,6 @@ class QueryPipeline:
             for doc in docs:
                 source_info = {
                     "document_id": doc.metadata.get("document_id", "Unknown"),
-                    "s3_key": doc.metadata.get("s3_key", "Unknown"),
                     "filename": doc.metadata.get("filename", "Unknown")
                 }
                 sources.append(source_info)

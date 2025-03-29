@@ -22,17 +22,18 @@ class DataIngestionService:
         
         # Initialize S3 client
         self.s3_client = boto3.client(
-            's3',
-            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
-            region_name=os.environ.get("AWS_REGION", "us-east-1")
+            service_name ="s3",
+            endpoint_url = 'https://3b0d5fa769d0ad9288cc7ffc64baba9b.r2.cloudflarestorage.com',
+            aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY'),
+            region_name="auto",
         )
         self.bucket_name = os.environ.get("S3_BUCKET_NAME")
         logger.info(f"S3 client initialized with bucket: {self.bucket_name}")
         
         # Initialize MongoDB client
         self.mongo_client = pymongo.MongoClient(os.environ.get("MONGO_URI"))
-        self.db = self.mongo_client["document_db"]
+        self.db = self.mongo_client["vedic-docs"]
         logger.info("MongoDB connection established")
         
         # Create temp directory for document storage if needed
