@@ -256,13 +256,16 @@ class PDFProcessingPipeline:
             
             # Prepare vectors for batch processing
             vectors_to_upsert = []
-            
+
+            logger.info(f"Preparing to upsert {len(chunks)} chunks for document ID: {document_id}")
+
             for i, chunk in enumerate(chunks):
                 chunk_id = f"{document_id}_{i}"
-                
+
                 # Generate embeddings
                 embedding_vector = self.embeddings.embed_query(chunk.page_content)
-                
+                logger.debug(f"Generated embedding for chunk {i}, ID: {chunk_id}")
+
                 # Prepare metadata
                 metadata = {
                     "filename": filename,
@@ -273,36 +276,36 @@ class PDFProcessingPipeline:
                     "page_number": chunk.metadata.get("page", 0),
                     "source": chunk.metadata.get("source", "")
                 }
-                
+
                 # Clean metadata
                 clean_metadata = {}
                 for key, value in metadata.items():
-                    # Ensure all values are JSON serializable
                     if isinstance(value, (str, int, float, bool, list, dict)) and key != "values":
                         clean_metadata[key] = value
-                
+
                 # Add to vectors list
                 vectors_to_upsert.append({
                     "id": chunk_id,
                     "values": embedding_vector,
                     "metadata": clean_metadata
                 })
-            
+
+            logger.info(f"Prepared {len(vectors_to_upsert)} vectors for upserting to index: {self.index_name}")
+
             # Process vectors in parallel batches
             with self.pc.Index(self.index_name, pool_threads=30) as index:
-                # Send requests in parallel
-                async_results = [
-                    index.upsert(vectors=vectors_chunk, async_req=True)
-                    for vectors_chunk in self.chunks(vectors_to_upsert, batch_size=200)
-                ]
-                
-                # Wait for and retrieve responses
+                async_results = []
+                for i, vectors_chunk in enumerate(self.chunks(vectors_to_upsert, batch_size=200)):
+                    logger.info(f"Upserting batch {i+1} with {len(vectors_chunk)} vectors...")
+                    result = index.upsert(vectors=vectors_chunk, async_req=True)
+                    async_results.append(result)
+
                 try:
                     [async_result.get() for async_result in async_results]
-                    logger.info(f"Successfully processed all chunks for document {document_id}")
+                    logger.info(f"Successfully upserted all vectors for document {document_id}")
                     return True
                 except Exception as e:
-                    logger.error(f"Error in parallel upsert: {str(e)}")
+                    logger.error(f"Error in parallel upsert for document {document_id}: {str(e)}")
                     return False
             
         except Exception as e:
