@@ -20,7 +20,7 @@ from src.components.data_ingestion import DataIngestionService
 from src.logging import logger
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.utils.env_checker import check_required_env_vars
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 load_dotenv()
 

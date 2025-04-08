@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional, Tuple
 import os
 from langchain_pinecone import PineconeVectorStore
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from pinecone import Pinecone
 from langchain_core.documents import Document
 from dotenv import load_dotenv

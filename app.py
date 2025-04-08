@@ -106,6 +106,12 @@ def read_root():
     return {"message": "Welcome to Vedic Pedia AI API"}
 
 
+@app.get("/healthz")
+def health_check():
+    return {"status": "ok"}
+
+
+
 
 
 
