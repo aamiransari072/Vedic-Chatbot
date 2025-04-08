@@ -1,7 +1,7 @@
 import os
 import uuid
 import io
-import magic
+import filetype
 from typing import List, Dict, Any, Optional
 import boto3
 import pymongo
@@ -110,7 +110,7 @@ class PDFProcessingPipeline:
         logger.info(f"Temporary directory created at: {self.temp_dir}")
         
         # Initialize file type checker
-        self.mime = magic.Magic(mime=True)
+        self.mime = filetype
 
     def validate_pdf(self, file_content: bytes) -> bool:
         """
@@ -124,9 +124,9 @@ class PDFProcessingPipeline:
         """
         try:
             # Check MIME type
-            mime_type = self.mime.from_buffer(file_content)
-            if mime_type != 'application/pdf':
-                logger.warning(f"Invalid file type: {mime_type}")
+            kind = filetype.guess(file_content)
+            if not kind or kind.mime != 'application/pdf':
+                logger.warning(f"Invalid file type: {kind.mime if kind else 'unknown'}")
                 return False
                 
             # Try to read the PDF

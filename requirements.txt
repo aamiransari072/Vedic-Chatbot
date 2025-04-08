@@ -24,7 +24,7 @@ python-docx>=0.8.11
 pandas>=2.0.0
 openpyxl>=3.1.2
 langchain-text-splitters
-python-magic
-python-magic-binary>=0.4.14
+filetype
 langchain_pinecone
+pypdf
 -e .
