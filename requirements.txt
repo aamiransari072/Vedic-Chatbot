@@ -28,4 +28,6 @@ filetype
 langchain_pinecone
 langchain-huggingface>=0.1.2
 pypdf
+hf_xet
+huggingface_hub[hf_xet]
 -e .
