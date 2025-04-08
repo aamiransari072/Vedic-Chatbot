@@ -25,6 +25,6 @@ pandas>=2.0.0
 openpyxl>=3.1.2
 langchain-text-splitters
 python-magic
-python-magic-bin
+python-magic-binary>=0.4.14
 langchain_pinecone
 -e .
